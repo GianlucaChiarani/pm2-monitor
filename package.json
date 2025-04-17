@@ -1,0 +1,23 @@
+{
+  "name": "pm2-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A monitoring tool for PM2 processes.",
+  "main": "dist/pm2-monitor.js",
+  "scripts": {
+    "start": "node dist/pm2-monitor.js",
+    "build": "tsc"
+  },
+  "author": "Gianluca Chiarani",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "nodemailer": "^6.10.0",
+    "pm2": "^6.0.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@types/nodemailer": "^6.4.17",
+    "typescript": "^5.8.2"
+  }
+}
