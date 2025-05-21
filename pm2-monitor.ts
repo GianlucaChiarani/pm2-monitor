@@ -94,7 +94,7 @@ export class PM2MonitorAll {
         fs.closeSync(fileDescriptor);
 
         const newContent = buffer.toString();
-        if (/error|exception|failed|unauthorized/i.test(newContent)) {
+        if (/error|exception|fail|failed|unauthorized/i.test(newContent)) {
           this.sendErrorEmail(appInfo.name, newContent);
         }
 
