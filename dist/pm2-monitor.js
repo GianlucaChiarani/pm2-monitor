@@ -76,7 +76,7 @@ class PM2MonitorAll {
                 fs_1.default.readSync(fileDescriptor, buffer, 0, readSize, appInfo.lastFileSize);
                 fs_1.default.closeSync(fileDescriptor);
                 const newContent = buffer.toString();
-                if (/error|exception|failed|unauthorized/i.test(newContent)) {
+                if (/error|exception|fail|failed|unauthorized/i.test(newContent)) {
                     this.sendErrorEmail(appInfo.name, newContent);
                 }
                 appInfo.lastFileSize = stats.size;
