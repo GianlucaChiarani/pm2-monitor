@@ -76,7 +76,17 @@ class PM2MonitorAll {
                 fs_1.default.readSync(fileDescriptor, buffer, 0, readSize, appInfo.lastFileSize);
                 fs_1.default.closeSync(fileDescriptor);
                 const newContent = buffer.toString();
-                if (/error|exception|fail|failed|unauthorized/i.test(newContent)) {
+                const includeWords = (process.env.INCLUDE_WORDS || "error,exception,fail,failed,unauthorized")
+                    .split(",")
+                    .map((w) => w.trim())
+                    .filter((w) => w.length > 0);
+                const excludeWords = (process.env.EXCLUDE_WORDS || "")
+                    .split(",")
+                    .map((w) => w.trim())
+                    .filter((w) => w.length > 0);
+                const includeRegex = new RegExp(includeWords.join("|"), "i");
+                const excludeRegex = excludeWords.length > 0 ? new RegExp(excludeWords.join("|"), "i") : null;
+                if (includeRegex.test(newContent) && (!excludeRegex || !excludeRegex.test(newContent))) {
                     this.sendErrorEmail(appInfo.name, newContent);
                 }
                 appInfo.lastFileSize = stats.size;
