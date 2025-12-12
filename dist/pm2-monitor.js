@@ -76,7 +76,8 @@ class PM2MonitorAll {
                 fs_1.default.readSync(fileDescriptor, buffer, 0, readSize, appInfo.lastFileSize);
                 fs_1.default.closeSync(fileDescriptor);
                 const newContent = buffer.toString();
-                const includeWords = (process.env.INCLUDE_WORDS || "error,exception,fail,failed,unauthorized")
+                const includeWords = (process.env.INCLUDE_WORDS ||
+                    "error,exception,fail,failed,unauthorized")
                     .split(",")
                     .map((w) => w.trim())
                     .filter((w) => w.length > 0);
@@ -85,9 +86,17 @@ class PM2MonitorAll {
                     .map((w) => w.trim())
                     .filter((w) => w.length > 0);
                 const includeRegex = new RegExp(includeWords.join("|"), "i");
-                const excludeRegex = excludeWords.length > 0 ? new RegExp(excludeWords.join("|"), "i") : null;
-                if (includeRegex.test(newContent) && (!excludeRegex || !excludeRegex.test(newContent))) {
-                    this.sendErrorEmail(appInfo.name, newContent);
+                const excludeRegex = excludeWords.length > 0
+                    ? new RegExp(excludeWords.join("|"), "i")
+                    : null;
+                if (includeRegex.test(newContent) &&
+                    (!excludeRegex || !excludeRegex.test(newContent))) {
+                    if (this.config.enableEmail) {
+                        this.sendErrorEmail(appInfo.name, newContent);
+                    }
+                    if (this.config.enableTelegram) {
+                        this.sendTelegramNotification(appInfo.name, newContent);
+                    }
                 }
                 appInfo.lastFileSize = stats.size;
             }
@@ -118,6 +127,29 @@ class PM2MonitorAll {
             }
         });
     }
+    sendTelegramNotification(appName, errorContent) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const { telegramBotToken, telegramChatId } = this.config;
+            if (!telegramBotToken || !telegramChatId)
+                return;
+            const message = `🚨 PM2 Log Error in "${appName}":\n${errorContent}`;
+            const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
+            try {
+                yield globalThis.fetch(url, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: telegramChatId,
+                        text: message,
+                    }),
+                });
+                console.log(`Telegram notification sent for ${appName}.`);
+            }
+            catch (error) {
+                console.error("Error sending Telegram notification:", error);
+            }
+        });
+    }
 }
 exports.PM2MonitorAll = PM2MonitorAll;
 // Esempio di utilizzo
@@ -130,6 +162,10 @@ if (require.main === module) {
         smtpPassword: process.env.SMTP_PASSWORD || "",
         fromEmail: process.env.FROM_EMAIL || "",
         toEmail: process.env.TO_EMAIL || "",
+        telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || "",
+        telegramChatId: process.env.TELEGRAM_CHAT_ID || "",
+        enableEmail: process.env.ENABLE_EMAIL !== "false", // default true
+        enableTelegram: process.env.ENABLE_TELEGRAM === "true", // default false
     };
     const pm2MonitorAll = new PM2MonitorAll(monitorConfig);
     pm2MonitorAll.startMonitoring();
