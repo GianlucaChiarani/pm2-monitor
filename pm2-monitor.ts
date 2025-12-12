@@ -179,6 +179,7 @@ export class PM2MonitorAll {
         body: JSON.stringify({
           chat_id: telegramChatId,
           text: message,
+          disable_web_page_preview: true,
         }),
       });
       console.log(`Telegram notification sent for ${appName}.`);
