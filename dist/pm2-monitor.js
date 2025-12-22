@@ -135,7 +135,7 @@ class PM2MonitorAll {
             const message = `🚨 PM2 Log Error in "${appName}":\n${errorContent}`;
             const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
             try {
-                yield globalThis.fetch(url, {
+                const response = yield globalThis.fetch(url, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
@@ -144,10 +144,20 @@ class PM2MonitorAll {
                         disable_web_page_preview: true,
                     }),
                 });
+                if (!response.ok) {
+                    const responseText = yield response.text();
+                    console.error(`Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`);
+                    return;
+                }
+                const data = yield response.json();
+                if (!data.ok) {
+                    console.error(`Telegram API error for ${appName}:`, data.description || data);
+                    return;
+                }
                 console.log(`Telegram notification sent for ${appName}.`);
             }
             catch (error) {
-                console.error("Error sending Telegram notification:", error);
+                console.error(`Error sending Telegram notification for ${appName}:`, (error === null || error === void 0 ? void 0 : error.message) || error);
             }
         });
     }
