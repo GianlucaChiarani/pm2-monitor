@@ -49,16 +49,24 @@ export class PM2MonitorAll {
           return;
         }
 
+        // Recupera la lista dei processi da escludere (ENV: EXCLUDE_PROCESSES)
+        const excludeProcesses = (process.env.EXCLUDE_PROCESSES || "")
+          .split(",")
+          .map((p) => p.trim())
+          .filter((p) => p.length > 0);
+
         // Memorizza i path dei file di log di errore per ogni app
         processList.forEach((proc) => {
+          const name = proc.name || `app-${proc.pm_id}`;
           if (
             proc.pm2_env &&
             proc.pm2_env.pm_out_log_path &&
             proc.pm2_env.pm_err_log_path &&
-            proc.name !== "pm2-monitor"
+            name !== "pm2-monitor" &&
+            !excludeProcesses.includes(name)
           ) {
             this.appsInfo.push({
-              name: proc.name || `app-${proc.pm_id}`,
+              name,
               errorLogPath: proc.pm2_env.pm_err_log_path,
               lastFileSize: 0,
             });
@@ -67,7 +75,7 @@ export class PM2MonitorAll {
 
         console.log("Monitoring the following PM2 apps:");
         this.appsInfo.forEach((app) =>
-          console.log(`- ${app.name} -> ${app.errorLogPath}`)
+          console.log(`- ${app.name} -> ${app.errorLogPath}`),
         );
 
         // Avvio del monitoraggio a intervalli
@@ -136,7 +144,7 @@ export class PM2MonitorAll {
 
   private async sendErrorEmail(
     appName: string,
-    errorContent: string
+    errorContent: string,
   ): Promise<void> {
     try {
       const transporter = nodemailer.createTransport({
@@ -164,7 +172,7 @@ export class PM2MonitorAll {
 
   private async sendTelegramNotification(
     appName: string,
-    errorContent: string
+    errorContent: string,
   ): Promise<void> {
     const { telegramBotToken, telegramChatId } = this.config;
     if (!telegramBotToken || !telegramChatId) return;
@@ -186,7 +194,7 @@ export class PM2MonitorAll {
       if (!response.ok) {
         const responseText = await response.text();
         console.error(
-          `Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`
+          `Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`,
         );
         return;
       }
@@ -195,7 +203,7 @@ export class PM2MonitorAll {
       if (!data.ok) {
         console.error(
           `Telegram API error for ${appName}:`,
-          data.description || data
+          data.description || data,
         );
         return;
       }
@@ -204,7 +212,7 @@ export class PM2MonitorAll {
     } catch (error: any) {
       console.error(
         `Error sending Telegram notification for ${appName}:`,
-        error?.message || error
+        error?.message || error,
       );
     }
   }

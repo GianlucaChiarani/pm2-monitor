@@ -41,6 +41,20 @@ FROM_EMAIL=your@email.com
 TO_EMAIL=recipient@email.com
 ```
 
+You can also control what the monitor watches with these optional environment variables:
+
+```
+INCLUDE_WORDS=error,exception,fail,failed,unauthorized
+EXCLUDE_WORDS=debug,info
+EXCLUDE_PROCESSES=metrics,logger
+ENABLE_EMAIL=true
+ENABLE_TELEGRAM=false
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+```
+
+- `EXCLUDE_PROCESSES`: comma-separated list of PM2 process names to exclude from monitoring (e.g. `metrics,logger`).
+
 ### Usage
 
 Build the project and start monitoring:

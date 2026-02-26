@@ -37,14 +37,21 @@ class PM2MonitorAll {
                     pm2_1.default.disconnect();
                     return;
                 }
+                // Recupera la lista dei processi da escludere (ENV: EXCLUDE_PROCESSES)
+                const excludeProcesses = (process.env.EXCLUDE_PROCESSES || "")
+                    .split(",")
+                    .map((p) => p.trim())
+                    .filter((p) => p.length > 0);
                 // Memorizza i path dei file di log di errore per ogni app
                 processList.forEach((proc) => {
+                    const name = proc.name || `app-${proc.pm_id}`;
                     if (proc.pm2_env &&
                         proc.pm2_env.pm_out_log_path &&
                         proc.pm2_env.pm_err_log_path &&
-                        proc.name !== "pm2-monitor") {
+                        name !== "pm2-monitor" &&
+                        !excludeProcesses.includes(name)) {
                         this.appsInfo.push({
-                            name: proc.name || `app-${proc.pm_id}`,
+                            name,
                             errorLogPath: proc.pm2_env.pm_err_log_path,
                             lastFileSize: 0,
                         });
