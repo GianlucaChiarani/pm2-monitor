@@ -141,25 +141,38 @@ class PM2MonitorAll {
                 return;
             const message = `🚨 PM2 Log Error in "${appName}":\n${errorContent}`;
             const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
-            try {
-                const response = yield globalThis.fetch(url, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        chat_id: telegramChatId,
-                        text: message,
-                        disable_web_page_preview: true,
-                    }),
-                });
-                if (!response.ok) {
-                    const responseText = yield response.text();
-                    console.error(`Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`);
-                    return;
+            const messages = [];
+            let chunk = "";
+            for (const character of message) {
+                if (chunk.length + character.length > 4096) {
+                    messages.push(chunk);
+                    chunk = "";
                 }
-                const data = yield response.json();
-                if (!data.ok) {
-                    console.error(`Telegram API error for ${appName}:`, data.description || data);
-                    return;
+                chunk += character;
+            }
+            if (chunk)
+                messages.push(chunk);
+            try {
+                for (const text of messages) {
+                    const response = yield globalThis.fetch(url, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            chat_id: telegramChatId,
+                            text,
+                            disable_web_page_preview: true,
+                        }),
+                    });
+                    if (!response.ok) {
+                        const responseText = yield response.text();
+                        console.error(`Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`);
+                        return;
+                    }
+                    const data = yield response.json();
+                    if (!data.ok) {
+                        console.error(`Telegram API error for ${appName}:`, data.description || data);
+                        return;
+                    }
                 }
                 console.log(`Telegram notification sent for ${appName}.`);
             }

@@ -179,33 +179,46 @@ export class PM2MonitorAll {
 
     const message = `🚨 PM2 Log Error in "${appName}":\n${errorContent}`;
     const url = `https://api.telegram.org/bot${telegramBotToken}/sendMessage`;
+    const messages: string[] = [];
+    let chunk = "";
+
+    for (const character of message) {
+      if (chunk.length + character.length > 4096) {
+        messages.push(chunk);
+        chunk = "";
+      }
+      chunk += character;
+    }
+    if (chunk) messages.push(chunk);
 
     try {
-      const response = await globalThis.fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: telegramChatId,
-          text: message,
-          disable_web_page_preview: true,
-        }),
-      });
+      for (const text of messages) {
+        const response = await globalThis.fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: telegramChatId,
+            text,
+            disable_web_page_preview: true,
+          }),
+        });
 
-      if (!response.ok) {
-        const responseText = await response.text();
-        console.error(
-          `Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`,
-        );
-        return;
-      }
+        if (!response.ok) {
+          const responseText = await response.text();
+          console.error(
+            `Telegram API responded with status ${response.status}: ${response.statusText}. Response: ${responseText}`,
+          );
+          return;
+        }
 
-      const data = await response.json();
-      if (!data.ok) {
-        console.error(
-          `Telegram API error for ${appName}:`,
-          data.description || data,
-        );
-        return;
+        const data = await response.json();
+        if (!data.ok) {
+          console.error(
+            `Telegram API error for ${appName}:`,
+            data.description || data,
+          );
+          return;
+        }
       }
 
       console.log(`Telegram notification sent for ${appName}.`);
